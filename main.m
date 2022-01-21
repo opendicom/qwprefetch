@@ -46,11 +46,11 @@ int main(int argc, const char * argv[])
      
      //[1]qidos
      NSData *qidosData=[NSData dataWithContentsOfFile:[args[1] stringByExpandingTildeInPath]];
-    if (!qidosData)
-    {
+     if (!qidosData)
+     {
        NSLog(@"bad path or json qidos file: %@",args[1]);
        exit(1);
-    }
+     }
 
      NSDictionary *qidos=[NSJSONSerialization JSONObjectWithData:qidosData options:0 error:&error];
      if (!qidos)
@@ -64,7 +64,7 @@ int main(int argc, const char * argv[])
      for (NSString *qidoKey in [qidos allKeys])
      {
         
-        NSString *keySpoolPath=[spoolPath stringByAppendingPathComponent:qidoKey];
+        NSString *keySpoolPath=[spoolPath stringByAppendingPathComponent:qidos[qidoKey]];
         if (
                ![fileManager fileExistsAtPath:keySpoolPath]
             && ![fileManager createDirectoryAtPath:keySpoolPath withIntermediateDirectories:YES attributes:nil error:&error]
@@ -88,10 +88,10 @@ int main(int argc, const char * argv[])
       
 
 #pragma mark qido
-        NSURL *qidoURL=[NSURL URLWithString:[NSString stringWithFormat:@"%@%@",qidos[qidoKey],DA]];
+        NSURL *qidoURL=[NSURL URLWithString:[NSString stringWithFormat:@"%@%@",qidoKey,DA]];
         if (!qidoURL)
         {
-           NSLog(@"ERROR cannot create url \"%@\":\"%@\"",qidoKey,[qidoURL absoluteString]);
+           NSLog(@"ERROR cannot create url \"%@\":\"%@\"",qidos[qidoKey],[qidoURL absoluteString]);
            continue;
         }
         NSData *qidoResponse=[NSData dataWithContentsOfURL:qidoURL

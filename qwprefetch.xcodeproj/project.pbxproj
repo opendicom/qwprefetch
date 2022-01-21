@@ -25,6 +25,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4AB669E32796F070004E9476 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		4AB669E42796F070004E9476 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		4AC8620C279AC10E00F51F81 /* qidos.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = qidos.json; sourceTree = "<group>"; };
 		4AFDD0B027918A5D00B517AA /* qwprefetch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = qwprefetch; sourceTree = BUILT_PRODUCTS_DIR; };
 		4AFDD0B327918A5D00B517AA /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		4AFDD0BC27918B6E00B517AA /* ZZError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZZError.h; sourceTree = "<group>"; };
@@ -52,6 +55,9 @@
 		4AFDD0A727918A5D00B517AA = {
 			isa = PBXGroup;
 			children = (
+				4AC8620C279AC10E00F51F81 /* qidos.json */,
+				4AB669E42796F070004E9476 /* LICENSE */,
+				4AB669E32796F070004E9476 /* README.md */,
 				4AFDD0BB27918B6E00B517AA /* include */,
 				4AFDD0C127918B6E00B517AA /* lib */,
 				4AFDD0B327918A5D00B517AA /* main.m */,
