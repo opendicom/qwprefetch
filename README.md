@@ -71,7 +71,7 @@ https://support.dcmtk.org/docs/storescu.html
 
 
 ```
-/usr/local/bin/storescu +sd +r +sp *.dcm +rn -R -C -xv -aet [aetSource] -aec [aetDest] IPDest portDest spoolDirPath/-xv
+/usr/local/bin/storescu +sd +r +sp *.dcm +rn -R +C -xv -aet [aetSource] -aec [aetDest] IPDest portDest spoolDirPath/-xv
 ```
 
 | argumento     | descripción                                                                                                                   |
@@ -82,7 +82,7 @@ https://support.dcmtk.org/docs/storescu.html
 | "*.dcm"          | /files ending with .dcm                                                                                                  |
 | +rn                 | rename with .done or .bad (ignore these files on the next execution)                           |
 | -R                   | only required                                                                                                                  |
-| -C                   | combine TS                                                                                                                   |
+| +C                   | combine TS                                                                                                                   |
 | -xv -xs -xe -xi | propose JPEG 2000 lossless jpeg lossless, explicit little endian, implicit little endian |
 | -aet                 | local aet                                                                                                                         |
 | qwprefetch     | value associated with qido request                                                                               |
