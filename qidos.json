@@ -1,16 +1,16 @@
 {
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=asseCANELONES&StudyDate=":"asseCANELONES",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=asseDURAZNO&StudyDate=":"asseDURAZNO",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=asseF&StudyDate=":"asseF",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=asseFLORIDA&StudyDate=":"asseFLORIDA",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=assePANDO&StudyDate=":"assePANDO",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=asseROCHA&StudyDate=":"asseROCHA",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=CHLCC&StudyDate=":"CHLCC",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=COMISION%20TECNICA%20MIXTA%20DE%20SALTO%20GRANDE&StudyDate=":"asseSALTO", 
+  "asseCANELONES":"*",
+  "asseDURAZNO":"*",
+  "asseF":"*",
+  "asseFLORIDA":"*",
+  "assePANDO":"*",
+  "asseROCHA":"*",
+  "CHLCC":"*",
+  "COMISION TECNICA MIXTA DE SALTO GRANDE":"*",
   
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=asseDOLORES&00081060=CHLCC^Nodo%20Mamografías^-&StudyDate=":"asseDOLORES",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=asseINCA&00081060=CHLCC^Nodo%20Mamografías^-&StudyDate=":"asseINCA",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=asseSALTO&00081060=CHLCC^Nodo%20Mamografías^-&StudyDate=":"asseSALTO",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=asseSORIANO&00081060=CHLCC^Nodo%20Mamografías^-&StudyDate=":"asseSORIANO",
-  "https://serviciosridi.asse.uy/dcm4chee-arc/qido/DCM4CHEE/instances?Modality=MG&00080080=asseTACUAREMBO&00081060=CHLCC^Nodo%20Mamografías^-&StudyDate=":"asseTACUAREMBO"
+  "asseDOLORES":"CHLCC^Nodo",
+  "asseINCA":"CHLCC^Nodo",
+  "asseSALTO":"CHLCC^Nodo",
+  "asseSORIANO":"CHLCC^Nodo",
+  "asseTACUAREMBO":"CHLCC^Nodo"
 }
