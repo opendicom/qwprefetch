@@ -1,5 +1,7 @@
-//  Created by jacquesfauquex@opendicom.com on 2014-07-30.
-//  Copyright (c) 2022 opendicom.com. All rights reserved.
+// Created by jacquesfauquex@opendicom.com on 2022-10-03.
+// Copyright (c) 2022 opendicom.com. All rights reserved.
+
+// branch created to create new b64uid repository from dicomweb
 
 #import <Foundation/Foundation.h>
 #import "ZZArchiveEntry.h"
@@ -8,41 +10,127 @@
 #import "ZZChannel.h"
 #import "ZZError.h"
 
-BOOL addSubdirs(NSFileManager *fileManager, NSString *dir, NSMutableSet *set)
-{
-    NSArray *array=[fileManager contentsOfDirectoryAtPath:dir error:nil];
-    BOOL isDir=false;
-    BOOL hasSubdir=false;
-    for (NSString *content in array)
-    {
-        NSString *subdir=[dir stringByAppendingPathComponent:content];
-        if ([fileManager fileExistsAtPath:subdir isDirectory:&isDir] && isDir)
-            hasSubdir|=addSubdirs(fileManager, subdir, set);
+NSString *B64CHAR[]={
+@"-", @"0", @"1", @"2", @"3", @"4", @"5", @"6", @"7", @"8",
+@"9", @"A", @"B", @"C", @"D", @"E", @"F", @"G", @"H", @"I",
+@"J", @"K", @"L", @"M", @"N", @"O", @"P", @"Q", @"R", @"S",
+@"T", @"U", @"V", @"W", @"X", @"Y", @"Z", @"_", @"a", @"b",
+@"c", @"d", @"e", @"f", @"g", @"h", @"i", @"j", @"k", @"l",
+@"m", @"n", @"o", @"p", @"q", @"r", @"s", @"t", @"u", @"v",
+@"w", @"x", @"y", @"z"
+};
+
+char u8u4( const char *byte_array, NSUInteger *idx) {
+    // returns half_byte
+    // updates idx
+    
+    // u4=half byte (0-15)
+    // 0x0   1.2.840.10008.
+    // 0x1   .
+    // 0x2   0.
+    // 0x3   0
+    // 0x4   1.
+    // 0x5   1
+    // 0x6   2.
+    // 0x7   2
+    // 0x8   3.
+    // 0x9   3
+    // 0xA   4
+    // 0xB   5
+    // 0xC   6
+    // 0xD   7
+    // 0xE   8
+    // 0xF   9
+    
+    char cur_byte = byte_array[*idx];
+    switch (cur_byte) {
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            *idx += 1;
+            return cur_byte - 0x2A;
+        case '.':
+            *idx += 1;
+            return 0x01;
+        case '0':
+        case '2':
+        case '3': {
+            if (byte_array[*idx+1] == '.')  {
+                *idx += 2;
+                return cur_byte + cur_byte - 0x5E;
+            } else {
+                *idx += 1;
+                return cur_byte + cur_byte - 0x5D;
+            }
+        }
+        case '1': {
+            if (byte_array[*idx+1] == '.') {
+                if (   sizeof(byte_array) - *idx > 14
+                    && byte_array[*idx+2]  == '2'
+                    && byte_array[*idx+3]  == '.'
+                    && byte_array[*idx+4]  == '8'
+                    && byte_array[*idx+5]  == '4'
+                    && byte_array[*idx+6]  == '0'
+                    && byte_array[*idx+7]  == '.'
+                    && byte_array[*idx+8]  == '1'
+                    && byte_array[*idx+9]  == '0'
+                    && byte_array[*idx+10] == '0'
+                    && byte_array[*idx+11] == '0'
+                    && byte_array[*idx+12] == '8'
+                    && byte_array[*idx+13] == '.'
+                    )
+                {
+                    *idx += 14;
+                    return 0x0;
+                }
+                else
+                {
+                    *idx += 2;
+                    return 0x4;
+                }
+            } else {
+                *idx += 1;
+                return cur_byte + cur_byte - 0x5D;
+            }
+        }
+        default:
+            return 0xFF;
     }
-    if (!hasSubdir) [set addObject:dir];
-    return true;
+}
+
+NSString* b64(NSString* uidString){
+    if (!uidString) return nil;
+    NSUInteger length=uidString.length;
+    if (length==0) return @"";
+    const char *array=[[uidString stringByAppendingString:@".."] cStringUsingEncoding:NSUTF8StringEncoding];
+    NSUInteger index=0;
+    unsigned char u4a,u4b,u4c;
+    NSMutableString *b64String=[NSMutableString stringWithCapacity:(length+1)/2];
+    while (index < length)
+    {
+        u4a=u8u4(array,&index);
+        if (u4a > 0x10) return nil;
+        u4b=u8u4(array,&index);
+        if (u4b > 0x10) return nil;
+        u4c=u8u4(array,&index);
+        if (u4c > 0x10) return nil;
+        [b64String appendString:B64CHAR[(u4a<<2) + (u4b>>2)]];
+        [b64String appendString:B64CHAR[((u4b & 0x03) << 4) + u4c]];
+    }
+    return [NSString stringWithString:b64String];
 }
 
 int main(int argc, const char * argv[])
 {
  @autoreleasepool {
-     
     NSError *error=nil;
-
-    NSData *xv=[@"1.2.840.10008.1.2.4.90" dataUsingEncoding:NSASCIIStringEncoding];//jpeg2000 lossless only
-    NSData *xs=[@"1.2.840.10008.1.2.4.70" dataUsingEncoding:NSASCIIStringEncoding];//jpeg lossless
-    NSData *xe=[@"1.2.840.10008.1.2.1" dataUsingEncoding:NSASCIIStringEncoding];//explicit little endian
-    NSData *xi=[@"1.2.840.10008.1.2" dataUsingEncoding:NSASCIIStringEncoding];//implicit little endian
-    NSRange firstKbRange=NSMakeRange(0, 1024);
-#pragma mark init
-     
-
     NSFileManager *fileManager=[NSFileManager defaultManager];
-
     //http://unicode.org/reports/tr35/tr35-6.html#Date_Format_Patterns
     NSDateFormatter *DAFormatter = [[NSDateFormatter alloc] init];
     [DAFormatter setDateFormat:@"yyyyMMdd"];
-
     //NSDateFormatter *DTFormatter = [[NSDateFormatter alloc] init];
     //[DTFormatter setDateFormat:@"yyyyMMddhhmmss"];
 
@@ -51,117 +139,60 @@ int main(int argc, const char * argv[])
      NSMutableArray *args=[NSMutableArray arrayWithArray:[[NSProcessInfo processInfo] arguments]];
      //NSLog(@"%@",[args description]);
      //[0] command path
-     //[1] qido url
-     //[2] remote reporting orgs json
-     //[3] spool folder
-     //[4] date (opcional)
-     
-#pragma mark [2] remote reporting orgs json
-     NSData *reportingData=[NSData dataWithContentsOfFile:[args[2] stringByExpandingTildeInPath]];
-     if (!reportingData)
-     {
-       NSLog(@"bad remote reporting orgs path or json file: %@",args[2]);
-       exit(1);
-     }
-     NSDictionary *reporting=[NSJSONSerialization JSONObjectWithData:reportingData options:0 error:&error];
-     if (!reporting)
-     {
-        NSLog(@"%@",error.description);
-        exit(1);
-     }
-     //NSLog(@"%@",reporting.description);
-     NSSet *convenios=[NSSet setWithArray:[reporting allKeys]];
-     
-#pragma mark [3] spool path
-     NSString *spoolPath=[args[3] stringByExpandingTildeInPath];
-     
-     NSMutableSet *paths=[NSMutableSet set];
-     addSubdirs(fileManager, spoolPath, paths);
-     
-     NSMutableArray *transferSyntaxes=[NSMutableArray arrayWithArray:[fileManager contentsOfDirectoryAtPath:spoolPath error:nil]];
+     //[1] qido endpoint
+     //[2] wado endpoint
+     NSString *path=[args[3] stringByExpandingTildeInPath];
      BOOL isDir=false;
-     
-     for (int index=(int)(transferSyntaxes.count)-1; index > -1; index-- )
+     if (![fileManager fileExistsAtPath:path isDirectory:&isDir] || !isDir)
      {
-         if (
-               ![fileManager fileExistsAtPath:[spoolPath stringByAppendingPathComponent:transferSyntaxes[index]] isDirectory:&isDir]
-             ||! isDir
-             ||[transferSyntaxes[index] isEqualToString:@".DS_Store"]
-             )
-             [transferSyntaxes removeObjectAtIndex:index];
+         NSLog(@"bad path:%@",path);
+         exit(1);
      }
-     
-#pragma mark [4] date
-     NSString *DA=nil;
-     if (args.count==5) DA=args[4];
-     else DA=[DAFormatter stringFromDate:[NSDate date]];
-     
-#pragma mark [1] qido url
-     /*
-      one url only for all orgs!
-      qido institution 00080080 does not work in dcm4chee-arc of Asse
-      */
-     NSString *urlString=args[1];
-     NSURL *qidoURL=[NSURL URLWithString:[urlString stringByAppendingString:DA]];
-     if (!qidoURL) return 1;
-     NSData *qidoResponse=[NSData dataWithContentsOfURL:qidoURL options:NSDataReadingUncached error:&error];
-     if (!qidoResponse)
-     {
-        //NSURLConnection finished with error - code -1002
-        NSLog(@"%@", error.description);
-         return 2;
-     }
-     if (![qidoResponse length]) return 3;//no instance found
-     NSArray *list = [NSJSONSerialization JSONObjectWithData:qidoResponse options:0 error:&error];
-     if (!list)
-     {
-          NSLog(@"%@\r\%@",error.description,[[NSString alloc]initWithData:qidoResponse encoding:NSUTF8StringEncoding] );
-          return 4;
-     }
-     
-#pragma mark - loop InstanceUIDs
+     //[4] date DAa (or startdate if there is [5] end date DAz
+     NSString *DAa=nil;
+     if (args.count==5) DAa=args[4];
+     else DAa=[DAFormatter stringFromDate:[NSDate date]];
+     NSArray *DAs=@[DAa];
 
-     for (NSDictionary *item in list)
+     for (NSString *DA in DAs)
      {
-         NSString *Institution=[item[@"00080080"][@"Value"] firstObject];
-         if (![convenios containsObject:Institution]) continue;
-         
-         if (![reporting[Institution] isEqualToString:@"*"])
+         NSURL *qidoE=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies?StudyDate=%@",args[1],DA]];
+         if (!qidoE) return 1;
+         NSData *qidoEdata=[NSData dataWithContentsOfURL:qidoE options:NSDataReadingUncached error:&error];
+         if (!qidoEdata)
          {
-             if (![[item[@"00081060"][@"Value"] firstObject][@"Alphabetic"] hasPrefix:reporting[Institution]]) continue;
+             //NSURLConnection finished with error - code -1002
+             NSLog(@"%@", error.description);
+             return 2;
          }
-         
-#pragma mark file already downloaded ?
-         NSString *EUID=[item[@"0020000D"][@"Value"] firstObject];
-         NSString *IUID=[item[@"00080018"][@"Value"] firstObject];
-
-         
-         //find study in spool
-         NSString *path=nil;
-         for (NSString *transferSyntax in transferSyntaxes)
+         if (!qidoEdata.length) continue;//no instance found
+         NSArray *Es = [NSJSONSerialization JSONObjectWithData:qidoEdata options:0 error:&error];
+         if (!Es)
          {
-             NSString *tempPath=[NSString stringWithFormat:@"%@/%@/%@/%@/%@",
-                             spoolPath,
-                             transferSyntax,
-                             Institution,
-                             DA,
-                             EUID];
-             if ([paths containsObject:tempPath])
+             NSLog(@"%@\r\%@",error.description,[[NSString alloc]initWithData:qidoEdata encoding:NSUTF8StringEncoding] );
+             return 4;
+         }
+         NSString *DApath=[path stringByAppendingPathComponent:DA];
+         if (![fileManager fileExistsAtPath:DApath isDirectory:&isDir])
+         {
+             if (![fileManager createDirectoryAtPath:DApath withIntermediateDirectories:false attributes:nil error:&error])
              {
-                 path=[NSString stringWithString:tempPath];
-                 break;
+                 NSLog(@"%@", error.description);
+                 return 4;
              }
          }
-         if (path)
+         else if (!isDir)
          {
-             NSString *IUIDpath=[[path stringByAppendingPathComponent:IUID] stringByAppendingPathExtension:@"dcm"];
-             if (
-                   [fileManager fileExistsAtPath:IUIDpath]
-                 ||[fileManager fileExistsAtPath:[IUIDpath stringByAppendingPathExtension:@"done"]]
-                 )
-                 continue;
+             NSLog(@"path %@ exists but is not a folder",DApath);
+             return 4;
          }
-         
+
+#pragma mark - loop E
+
+         for (NSDictionary *E in Es)
+         {
+             NSString *Euid=[item[@"0020000D "][@"Value"] firstObject];
+
          //instance not dowloaded or successfully sent to workstation
 
 #pragma mark download file
