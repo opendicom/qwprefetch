@@ -320,8 +320,10 @@ int main(int argc, const char * argv[])
                   {
                      NSLog(@"already exists: %@/%@",Sb64path,Ib64);
                   }
-                  uint8 sopcLength=0[b];
-                  [unzipped writeToFile:[Sb64path stringByAppendingPathComponent:Ib64] atomically:NO];
+                  else
+                  {
+                     [unzipped writeToFile:[Sb64path stringByAppendingPathComponent:Ib64] atomically:NO];
+                  }
               }
            }
         }
