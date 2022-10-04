@@ -10,6 +10,19 @@
 #import "ZZChannel.h"
 #import "ZZError.h"
 
+NSFileManager *fileManager=nil;
+BOOL isDir=false;
+BOOL isNewSubdir=false;
+
+//uint8 sopClength=0;
+//NSRange sopClengthRange;
+//uint8 sopIoffset=0;
+//uint8 sopIlength=0;
+//NSRange sopIlengthRange;
+//NSRange sopIrange;
+//NSRange sopIlastByteRange;
+//uint8 sopIlastByte;
+
 NSString *B64CHAR[]={
 @"-", @"0", @"1", @"2", @"3", @"4", @"5", @"6", @"7", @"8",
 @"9", @"A", @"B", @"C", @"D", @"E", @"F", @"G", @"H", @"I",
@@ -123,16 +136,49 @@ NSString* b64(NSString* uidString){
     return [NSString stringWithString:b64String];
 }
 
+NSString *subdirB64(NSString *dir,NSString *uid, BOOL *isNewSubdir) {
+   NSError *mkdirError=nil;
+   NSString *subdirB64=[dir stringByAppendingPathComponent:b64(uid)];
+   if (![fileManager fileExistsAtPath:subdirB64 isDirectory:&isDir])
+   {
+       if (![fileManager createDirectoryAtPath:subdirB64 withIntermediateDirectories:false attributes:nil error:&mkdirError])
+       {
+           NSLog(@"%@", mkdirError.description);
+           exit(2);
+       }
+       *isNewSubdir=true;
+       return subdirB64;
+   }
+   
+   if (!isDir)
+   {
+      NSLog(@"path %@ exists but is not a folder",subdirB64);
+      exit(2);
+   }
+   
+   *isNewSubdir=false;
+   return subdirB64;
+}
+
+
 int main(int argc, const char * argv[])
 {
- @autoreleasepool {
-    NSError *error=nil;
-    NSFileManager *fileManager=[NSFileManager defaultManager];
+   Byte *uid=(Byte*)malloc(64);
+   fileManager=[NSFileManager defaultManager];
+   //sopClengthRange=NSMakeRange(0xE4, 1);
+   //sopIlengthRange=NSMakeRange(NSNotFound, 1);
+   //sopIrange=NSMakeRange(NSNotFound, 0);
+   //sopIlastByte=NSMakeRange(NSNotFound, 1);
+   @autoreleasepool {
+    NSError *jsonError=nil;
+    NSError *qidoError=nil;
+    NSError *wadoError=nil;
+    NSError *unzipError=nil;
     //http://unicode.org/reports/tr35/tr35-6.html#Date_Format_Patterns
     NSDateFormatter *DAFormatter = [[NSDateFormatter alloc] init];
-    [DAFormatter setDateFormat:@"yyyyMMdd"];
+    [DAFormatter setDateFormat:@"yyMMdd"];
     //NSDateFormatter *DTFormatter = [[NSDateFormatter alloc] init];
-    //[DTFormatter setDateFormat:@"yyyyMMddhhmmss"];
+    //[DTFormatter setDateFormat:@"yyMMddhhmmss"];
 
 #pragma mark - args
      
@@ -149,128 +195,135 @@ int main(int argc, const char * argv[])
          exit(1);
      }
      //[4] date DAa (or startdate if there is [5] end date DAz
-     NSString *DAa=nil;
-     if (args.count==5) DAa=args[4];
-     else DAa=[DAFormatter stringFromDate:[NSDate date]];
-     NSArray *DAs=@[DAa];
+     NSString *Da=nil;
+     if (args.count==5) Da=args[4];
+     else Da=[DAFormatter stringFromDate:[NSDate date]];
+     NSArray *Ds=@[Da];
 
-     for (NSString *DA in DAs)
+     for (NSString *D in Ds)
      {
-         NSURL *qidoE=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies?StudyDate=%@",args[1],DA]];
-         if (!qidoE) return 1;
-         NSData *qidoEdata=[NSData dataWithContentsOfURL:qidoE options:NSDataReadingUncached error:&error];
+         NSURL *qidoE=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies?StudyDate=%@",args[1],D]];
+         if (!qidoE) return 3;
+         NSData *qidoEdata=[NSData dataWithContentsOfURL:qidoE options:NSDataReadingUncached error:&qidoError];
          if (!qidoEdata)
          {
              //NSURLConnection finished with error - code -1002
-             NSLog(@"%@", error.description);
-             return 2;
+             NSLog(@"%@", qidoError.description);
+             return 3;
          }
          if (!qidoEdata.length) continue;//no instance found
-         NSArray *Es = [NSJSONSerialization JSONObjectWithData:qidoEdata options:0 error:&error];
+         NSArray *Es = [NSJSONSerialization JSONObjectWithData:qidoEdata options:0 error:&jsonError];
          if (!Es)
          {
-             NSLog(@"%@\r\%@",error.description,[[NSString alloc]initWithData:qidoEdata encoding:NSUTF8StringEncoding] );
-             return 4;
+             NSLog(@"%@\r\%@",jsonError.description,[[NSString alloc]initWithData:qidoEdata encoding:NSUTF8StringEncoding] );
+             return 3;
          }
-         NSString *DApath=[path stringByAppendingPathComponent:DA];
-         if (![fileManager fileExistsAtPath:DApath isDirectory:&isDir])
-         {
-             if (![fileManager createDirectoryAtPath:DApath withIntermediateDirectories:false attributes:nil error:&error])
-             {
-                 NSLog(@"%@", error.description);
-                 return 4;
-             }
-         }
-         else if (!isDir)
-         {
-             NSLog(@"path %@ exists but is not a folder",DApath);
-             return 4;
-         }
+         NSString *Db64path=subdirB64(path,D,&isNewSubdir);
 
+        
 #pragma mark - loop E
 
          for (NSDictionary *E in Es)
          {
-             NSString *Euid=[item[@"0020000D "][@"Value"] firstObject];
-
-         //instance not dowloaded or successfully sent to workstation
-
-#pragma mark download file
-         //NSString *SUID=[instance[@"0020000E"][@"Value"] firstObject];
-
-         NSString *RetrieveString=[item[@"00081190"][@"Value"] firstObject];
-         if (RetrieveString && RetrieveString.length)
-         {
-            NSURL *RetrieveURL=[NSURL URLWithString:RetrieveString];
-            if (!RetrieveURL)
+            NSString *Euid=[E[@"0020000D"][@"Value"] firstObject];
+            NSURL *qidoS=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies/%@/series?",args[1],Euid]];
+            if (!qidoS) continue;
+            NSData *qidoSdata=[NSData dataWithContentsOfURL:qidoS options:NSDataReadingUncached error:&qidoError];
+            if (!qidoSdata)
             {
-                NSLog(@"ERROR could not create URL from %@",RetrieveString);
-                continue;
+                //NSURLConnection finished with error - code -1002
+                NSLog(@"%@", qidoError.description);
+                return 4;
             }
-            NSData *downloaded=[NSData dataWithContentsOfURL:RetrieveURL options:NSDataReadingUncached error:&error];
-            if (!downloaded)
+            if (!qidoSdata.length) continue;//no instance found
+            NSArray *Ss = [NSJSONSerialization JSONObjectWithData:qidoSdata options:0 error:&jsonError];
+            if (!Ss)
             {
-               NSLog(@"ERROR response to %@: %@",RetrieveString,error.description);
-               continue;
+                NSLog(@"%@\r\%@",jsonError.description,[[NSString alloc]initWithData:qidoSdata encoding:NSUTF8StringEncoding] );
+                return 4;
             }
+            NSString *Eb64path=subdirB64(Db64path,D,&isNewSubdir);
 
-                                     
-            if (downloaded.length < 1000)
+
+#pragma mark loop S
+            for (NSDictionary *S in Ss)
             {
-               NSLog(@"empty response to %@",RetrieveString);
-               continue;
-            }
-                 
-#pragma mark unzip
-            ZZArchive *archive = [ZZArchive archiveWithData:downloaded];
-            ZZArchiveEntry *firstEntry = archive.entries[0];
-            NSData *unzipped = [firstEntry newDataWithError:&error];
-            if (error!=nil)
-            {
-               NSLog(@"could NOT unzip response to %@: %@",RetrieveString,downloaded.description);
+               NSString *Suid=[E[@"0020000E"][@"Value"] firstObject];
+               NSString *Sb64path=subdirB64(Eb64path,Suid,&isNewSubdir);
+
+               NSMutableSet *Is=nil;
+               //NSUInteger serverIcount=[[S[@"00201209)"][@"Value"] firstObject]unsignedIntegerValue];
+               if (!isNewSubdir)
+               {
+                  Is=[NSMutableSet set];
+                  
+                  //check if the series dir already has contents
+                  NSArray *contents=[fileManager contentsOfDirectoryAtPath:Sb64path error:nil];
+                  for (NSString *name in contents)
+                  {
+                     if (![name hasPrefix:@"."]) [Is addObject:name];
+                  }
+               }
+               
+               //download
+               NSString *RetrieveString=[S[@"00081190"][@"Value"] firstObject];
+               if (!RetrieveString || !RetrieveString.length) continue;
+               NSURL *RetrieveURL=[NSURL URLWithString:RetrieveString];
+               if (!RetrieveURL)
+               {
+                  NSLog(@"ERROR could not create URL from %@",RetrieveString);
+                  continue;
+               }
+               NSData *downloaded=[NSData dataWithContentsOfURL:RetrieveURL options:NSDataReadingUncached error:&wadoError];
+               if (!downloaded)
+               {
+                  NSLog(@"ERROR response to %@: %@",RetrieveString,wadoError.description);
+                  continue;
+               }
+               if (downloaded.length < 1000)
+               {
+                  NSLog(@"empty response to %@",RetrieveString);
+                  continue;
+               }
+
+               ZZArchive *archive=[ZZArchive archiveWithData:downloaded];
+               NSArray *entries=archive.entries;
+#pragma mark loop I
+               for (ZZArchiveEntry *entry in entries) {
+                  NSData *Idata = [entry newDataWithError:&unzipError];
+                  if (unzipError!=nil)
+                  {
+                     NSLog(@"could NOT unzip response to %@: %@",RetrieveString,unzipError.description);
                      continue;
-            }
-            
-#pragma mark find transfer syntax
-            NSString *transferSyntax=nil;
-            NSRange xvRange=[unzipped rangeOfData:xv options:0 range:firstKbRange];
-            if (xvRange.location==NSNotFound)
-            {
-                NSRange xsRange=[unzipped rangeOfData:xs options:0 range:firstKbRange];
-                if (xsRange.location==NSNotFound)
-                {
-                    NSRange xeRange=[unzipped rangeOfData:xe options:0 range:firstKbRange];
-                    if (xeRange.location==NSNotFound)
-                    {
-                        NSRange xiRange=[unzipped rangeOfData:xi options:0 range:firstKbRange];
-                        if (xiRange.location==NSNotFound)
-                        {
-                            NSLog(@"unknown transfer syntax for  %@",RetrieveString);
-                            transferSyntax=@"unknown";
-                        }
-                        else transferSyntax=@"-xi";
-                    }
-                    else transferSyntax=@"-xe";
-                }
-                else transferSyntax=@"-xs";
-            }
-            else transferSyntax=@"-xv";
-             
-#pragma mark mkdir?
-            if (!path)
-            {
-                path=[NSString stringWithFormat:@"%@/%@/%@/%@/%@",
-                                spoolPath,
-                                transferSyntax,
-                                Institution,
-                                DA,
-                                EUID];
-               [fileManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil];
-               [paths addObject:path];
-            }
+                  }
+                  //find sopuid
+                  const Byte *Ibytes=Idata.bytes;
+                  //SOPClass.length : byte[0xE4]
+                  //[unzipped getBytes:&sopClength range:sopClengthRange];
+                  //sopIlengthRange.location= 0xE4 + 0x02 + sopClength + 0x06;
+                  //[unzipped getBytes:&sopIlength range:sopIlengthRange];
 
-#pragma mark write file
-             [unzipped writeToFile:[[path stringByAppendingPathComponent:IUID] stringByAppendingPathExtension:@"dcm"] atomically:NO];
+                  //sopIrange.location=sopIlengthRange.location+2;
+                  //sopIlastByteRange.location=sopIrange.location + sopIlength -1;
+                  //[unzipped getBytes:&sopIlastByte range:sopIlastByteRange];
+                  //sopIrange.length=sopIlength - (sopIlastByte==0x00);
+                  
+                  NSUInteger Ioffset = 0xE4 + 0x02 + Ibytes[0xE4] + 0x08;
+                  NSUInteger Ilength = Ibytes[Ioffset - 0x02];
+                  NSUInteger Ilast = Ibytes[Ioffset + Ilength -1];
+                  Ilength -= (Ilast == 0x00);
+                  [Idata getBytes:&uid range:NSMakeRange(Ioffset, Ilength)];
+                  NSString *I=[[NSString alloc]initWithBytes:&uid length:Ilength encoding:NSASCIIStringEncoding];
+                  
+                  NSString *Ib64=b64(I);
+                  if (Is && [Is containsObject:Ib64])
+                  {
+                     NSLog(@"already exists: %@/%@",Sb64path,Ib64);
+                  }
+                  uint8 sopcLength=0[b];
+                  [unzipped writeToFile:[Sb64path stringByAppendingPathComponent:Ib64] atomically:NO];
+              }
+           }
         }
      }
   }
