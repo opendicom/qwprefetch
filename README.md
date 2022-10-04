@@ -74,6 +74,8 @@ https://support.dcmtk.org/docs/storescu.html
 /usr/local/bin/storescu +sd +r +sp *.dcm +rn -R +C -xv -aet [aetSource] -aec [aetDest] IPDest portDest spoolDirPath/-xv
 ```
 
+SpoolFolder está subdividido por transfer syntax. Conviene ejecutar un storescu con el parametro de transfer syntax propuesto (-xv -xs -xe -xi) correspondiente al nombre de la subdivisión.
+
 | argumento     | descripción                                                                                                                   |
 | --------------- | ----------------------------------------------------------------------------------------------- |
 | +sd                | scan directory one level                                                                                                |
