@@ -202,7 +202,7 @@ int main(int argc, const char * argv[])
 
      for (NSString *D in Ds)
      {
-         NSURL *qidoE=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies?StudyDate=%@",args[1],D]];
+         NSURL *qidoE=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies?StudyDate=20%@",args[1],D]];
          if (!qidoE) return 3;
          NSData *qidoEdata=[NSData dataWithContentsOfURL:qidoE options:NSDataReadingUncached error:&qidoError];
          if (!qidoEdata)
@@ -242,13 +242,13 @@ int main(int argc, const char * argv[])
                 NSLog(@"%@\r\%@",jsonError.description,[[NSString alloc]initWithData:qidoSdata encoding:NSUTF8StringEncoding] );
                 return 4;
             }
-            NSString *Eb64path=subdirB64(Db64path,D,&isNewSubdir);
+            NSString *Eb64path=subdirB64(Db64path,Euid,&isNewSubdir);
 
 
 #pragma mark loop S
             for (NSDictionary *S in Ss)
             {
-               NSString *Suid=[E[@"0020000E"][@"Value"] firstObject];
+               NSString *Suid=[S[@"0020000E"][@"Value"] firstObject];
                NSString *Sb64path=subdirB64(Eb64path,Suid,&isNewSubdir);
 
                NSMutableSet *Is=nil;
@@ -322,7 +322,7 @@ int main(int argc, const char * argv[])
                   }
                   else
                   {
-                     [unzipped writeToFile:[Sb64path stringByAppendingPathComponent:Ib64] atomically:NO];
+                     [Idata writeToFile:[Sb64path stringByAppendingPathComponent:Ib64] atomically:NO];
                   }
               }
            }
