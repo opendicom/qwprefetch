@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4AA72F5528EDB1C5004ED9AD /* NSMutableURLRequest+DICOMweb.m in Sources */ = {isa = PBXBuildFile; fileRef = 4AA72F4F28EDB1C5004ED9AD /* NSMutableURLRequest+DICOMweb.m */; };
+		4AA72F5728EDB1C5004ED9AD /* NSData+DICOMweb.m in Sources */ = {isa = PBXBuildFile; fileRef = 4AA72F5228EDB1C5004ED9AD /* NSData+DICOMweb.m */; };
 		4AFDD0B427918A5D00B517AA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4AFDD0B327918A5D00B517AA /* main.m */; };
 		4AFDD0C427918B6E00B517AA /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AFDD0C227918B6E00B517AA /* libz.a */; };
 		4AFDD0C527918B6E00B517AA /* libzipzap.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AFDD0C327918B6E00B517AA /* libzipzap.a */; };
@@ -25,6 +27,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4AA72F4828EDB1C5004ED9AD /* NSData+DICOMweb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSData+DICOMweb.h"; sourceTree = "<group>"; };
+		4AA72F4C28EDB1C5004ED9AD /* NSMutableURLRequest+DICOMweb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSMutableURLRequest+DICOMweb.h"; sourceTree = "<group>"; };
+		4AA72F4F28EDB1C5004ED9AD /* NSMutableURLRequest+DICOMweb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSMutableURLRequest+DICOMweb.m"; sourceTree = "<group>"; };
+		4AA72F5228EDB1C5004ED9AD /* NSData+DICOMweb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSData+DICOMweb.m"; sourceTree = "<group>"; };
 		4AB669E32796F070004E9476 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4AB669E42796F070004E9476 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		4AC8620C279AC10E00F51F81 /* qidos.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = qidos.json; sourceTree = "<group>"; };
@@ -52,9 +58,29 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4AA72F4728EDB1C5004ED9AD /* response */ = {
+			isa = PBXGroup;
+			children = (
+				4AA72F4828EDB1C5004ED9AD /* NSData+DICOMweb.h */,
+				4AA72F5228EDB1C5004ED9AD /* NSData+DICOMweb.m */,
+				4AA72F4A28EDB1C5004ED9AD /* request */,
+			);
+			path = response;
+			sourceTree = "<group>";
+		};
+		4AA72F4A28EDB1C5004ED9AD /* request */ = {
+			isa = PBXGroup;
+			children = (
+				4AA72F4C28EDB1C5004ED9AD /* NSMutableURLRequest+DICOMweb.h */,
+				4AA72F4F28EDB1C5004ED9AD /* NSMutableURLRequest+DICOMweb.m */,
+			);
+			path = request;
+			sourceTree = "<group>";
+		};
 		4AFDD0A727918A5D00B517AA = {
 			isa = PBXGroup;
 			children = (
+				4AA72F4728EDB1C5004ED9AD /* response */,
 				4AC8620C279AC10E00F51F81 /* qidos.json */,
 				4AB669E42796F070004E9476 /* LICENSE */,
 				4AB669E32796F070004E9476 /* README.md */,
@@ -150,6 +176,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4AA72F5728EDB1C5004ED9AD /* NSData+DICOMweb.m in Sources */,
+				4AA72F5528EDB1C5004ED9AD /* NSMutableURLRequest+DICOMweb.m in Sources */,
 				4AFDD0B427918A5D00B517AA /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
