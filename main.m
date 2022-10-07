@@ -132,9 +132,12 @@ NSString* b64(NSString* uidString){
     return [NSString stringWithString:b64String];
 }
 
-NSString *subdirB64(NSString *dir,NSString *uid, BOOL *isNewSubdir) {
+NSString *subdirB64(NSString *dir,NSString *uid, BOOL useB64uid, BOOL *isNewSubdir) {
    NSError *mkdirError=nil;
-   NSString *subdirB64=[dir stringByAppendingPathComponent:b64(uid)];
+   NSString *subdirB64;
+   if (useB64uid)subdirB64=[dir stringByAppendingPathComponent:b64(uid)];
+   else subdirB64=[dir stringByAppendingPathComponent:uid];
+   
    if (![fileManager fileExistsAtPath:subdirB64 isDirectory:&isDir])
    {
        if (![fileManager createDirectoryAtPath:subdirB64 withIntermediateDirectories:false attributes:nil error:&mkdirError])
@@ -183,9 +186,11 @@ int main(int argc, const char * argv[])
          NSLog(@"bad path:%@",path);
          exit(1);
      }
-     //[4] date DAa (or startdate if there is [5] end date DAz
+     //[4] useB64uid / uid
+     BOOL useB64uid=[args[4]isEqualToString:@"useB64uid"];
+     //[5] date DAa (or startdate if there is [5] end date DAz
      NSString *Da=nil;
-     if (args.count==5) Da=args[4];
+     if (args.count==6) Da=args[5];
      else Da=[DAFormatter stringFromDate:[NSDate date]];
      NSArray *Ds=@[Da];
 
@@ -207,7 +212,7 @@ int main(int argc, const char * argv[])
              NSLog(@"%@\r\%@",jsonError.description,[[NSString alloc]initWithData:qidoEdata encoding:NSUTF8StringEncoding] );
              return 3;
          }
-         NSString *Db64path=subdirB64(path,D,&isNewSubdir);
+         NSString *Db64path=subdirB64(path,D,useB64uid,&isNewSubdir);
 
         
 #pragma mark - loop E
@@ -231,14 +236,14 @@ int main(int argc, const char * argv[])
                 NSLog(@"%@\r\%@",jsonError.description,[[NSString alloc]initWithData:qidoSdata encoding:NSUTF8StringEncoding] );
                 return 4;
             }
-            NSString *Eb64path=subdirB64(Db64path,E,&isNewSubdir);
+            NSString *Eb64path=subdirB64(Db64path,E,useB64uid,&isNewSubdir);
 
 
 #pragma mark loop S
             for (NSDictionary *Sdict in Sdicts)
             {
                NSString *S=[Sdict[@"0020000E"][@"Value"] firstObject];
-               NSString *Sb64path=subdirB64(Eb64path,S,&isNewSubdir);
+               NSString *Sb64path=subdirB64(Eb64path,S,useB64uid,&isNewSubdir);
                NSMutableSet *Is=nil;
                //NSUInteger serverIcount=[[S[@"00201209)"][@"Value"] firstObject]unsignedIntegerValue];
                if (!isNewSubdir)
@@ -258,7 +263,9 @@ int main(int argc, const char * argv[])
                
                for (NSString* I in Iranges)
                {
-                  NSString *Ib64=b64(I);
+                  NSString *Ib64;
+                  if (useB64uid) Ib64=b64(I);
+                  else Ib64=I;
                   if (Is && [Is containsObject:Ib64])
                   {
                      NSLog(@"already exists: %@/%@",Sb64path,Ib64);
