@@ -24,7 +24,7 @@ static NSData *rnrnData=nil;
    if (response.statusCode!=200) return nil;
    if (!data.length) return nil;
    if (data.length < 1000) return nil;//no DICOM is so short
-   // [data writeToFile:@"/Users/admin/Downloads/retrieveDICM" atomically:false];
+//[data writeToFile:@"/Users/admin/Documents/retrieveDICM" atomically:false];
    //singleton searching data init
    if (!hhData) hhData=[@"--" dataUsingEncoding:NSASCIIStringEncoding];
    if (!rnData) rnData=[@"\r\n" dataUsingEncoding:NSASCIIStringEncoding];
@@ -67,7 +67,7 @@ static NSData *rnrnData=nil;
 
       //dicom
       dicomRange.location=dicomPrefixRange.location+dicomPrefixRange.length;
-      dicomRange.length=data.length-nextBoundaryRange.location-0x02;//-0x02 there is a 0D0A at the end of DICOM before boundary
+      dicomRange.length=nextBoundaryRange.location-dicomRange.location-0x02;//-0x02 there is a 0D0A at the end of DICOM before boundary
       
       //find SOP iuid
       cLengthRange.location=dicomRange.location + 0xA4;

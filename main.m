@@ -16,12 +16,15 @@ enum {
    filter
 } argsEnum;
 
-BOOL useB64uid=false;
+const BOOL useB64uid=false;
+
+NSString *ext=@"dcm";
 NSString *Q=nil;
 NSString *R=nil;
 NSFileManager *fileManager=nil;
 BOOL isDir=false;
 BOOL isNewSubdir=false;
+
 
 NSString *B64CHAR[]={
 @"-", @"0", @"1", @"2", @"3", @"4", @"5", @"6", @"7", @"8",
@@ -219,7 +222,11 @@ void Eprocess(NSString *Epath, NSString* E)
          else
          {
             NSData *Idata=[data subdataWithRange:[Iranges[I] rangeValue]];
-            [Idata writeToFile:[Sb64path stringByAppendingPathComponent:Ib64] atomically:NO];
+            [Idata writeToFile:
+             [
+              [Sb64path stringByAppendingPathComponent:Ib64]
+              stringByAppendingPathExtension:ext]
+              atomically:NO];
          }
       }//I
    }//Sdict
