@@ -248,44 +248,50 @@ int main(int argc, const char * argv[])
          NSLog(@"bad path:%@",path);
          exit(1);
      }
-   
+
+       
+     NSString *queryFilter=nil;
+     NSArray *queryMatches=nil;
      //filter is or E or D-D
      if ([args[filter] containsString:@"-"])
      {
-        //date filter
+        queryFilter=@"%@/studies?StudyDate=20%@";
         NSArray *fromto=[args[filter] componentsSeparatedByString:@"-"];
-        NSArray *Ds=nil;
-        if ([fromto[0] isEqualToString:fromto[1]]) Ds=@[fromto[0]];
+        if ([fromto[0] isEqualToString:fromto[1]]) queryMatches=@[fromto[0]];
 //TODO Ds range
-        for (NSString *D in Ds)
-        {
-            NSURL *qidoE=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies?StudyDate=20%@",args[queryEndpoint],D]];
-            if (!qidoE) return 3;
-            NSData *qidoEdata=[NSData dataWithContentsOfURL:qidoE options:NSDataReadingUncached error:&error];
-            if (!qidoEdata)
-            {
-                //NSURLConnection finished with error - code -1002
-                NSLog(@"%@", error.description);
-                return 3;
-            }
-            if (!qidoEdata.length) continue;//no instance found
-            NSArray *Edicts = [NSJSONSerialization JSONObjectWithData:qidoEdata options:0 error:&error];
-            if (!Edicts)
-            {
-                NSLog(@"%@\r\%@",error.description,[[NSString alloc]initWithData:qidoEdata encoding:NSUTF8StringEncoding] );
-                return 3;
-            }
-            for (NSDictionary *Edict in Edicts) Eprocess(
-                                                         subdirB64(path,D,useB64uid,&isNewSubdir),
-                                                         [Edict[@"0020000D"][@"Value"] firstObject]
-                                                         );
-         }//Date
-
      }
-     else
+     else //EUID filter
      {
-        //EUID filter
+        queryFilter=@"%@/studies?StudyInstanceUID=%@";
+        queryMatches=@[args[filter]];
      }
+
+       
+     for (NSString *queryMatch in queryMatches)
+     {
+         NSURL *qidoE=[NSURL URLWithString:[NSString stringWithFormat:queryFilter,args[queryEndpoint],queryMatch]];
+         NSData *qidoEdata=[NSData dataWithContentsOfURL:qidoE options:NSDataReadingUncached error:&error];
+         if (!qidoEdata)
+         {
+             //NSURLConnection finished with error - code -1002
+             NSLog(@"%@", error.description);
+             return 3;
+         }
+         if (!qidoEdata.length) continue;//no instance found
+         NSArray *Edicts = [NSJSONSerialization JSONObjectWithData:qidoEdata options:0 error:&error];
+         if (!Edicts)
+         {
+             NSLog(@"%@\r\%@",error.description,[[NSString alloc]initWithData:qidoEdata encoding:NSUTF8StringEncoding] );
+             return 3;
+         }
+         for (NSDictionary *Edict in Edicts) {
+           Eprocess(
+                     subdirB64(path,queryMatch,useB64uid,&isNewSubdir),
+                     [Edict[@"0020000D"][@"Value"] firstObject]
+                    );
+         }
+      }
+
        
    }//autorelease pool
    return 0;
