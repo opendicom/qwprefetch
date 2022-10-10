@@ -252,12 +252,14 @@ int main(int argc, const char * argv[])
        
      NSString *queryFilter=nil;
      NSArray *queryMatches=nil;
+     BOOL mkMatchFolder=false;
      //filter is or E or D-D
      if ([args[filter] containsString:@"-"])
      {
         queryFilter=@"%@/studies?StudyDate=20%@";
+        mkMatchFolder=true;
         NSArray *fromto=[args[filter] componentsSeparatedByString:@"-"];
-        if ([fromto[0] isEqualToString:fromto[1]]) queryMatches=@[fromto[0]];
+        if ([fromto[0] isEqualToString:fromto[1]]) queryMatches=@[[fromto[0]substringFromIndex:2]];//eliminates 20th century from reference
 //TODO Ds range
      }
      else //EUID filter
@@ -284,12 +286,10 @@ int main(int argc, const char * argv[])
              NSLog(@"%@\r\%@",error.description,[[NSString alloc]initWithData:qidoEdata encoding:NSUTF8StringEncoding] );
              return 3;
          }
-         for (NSDictionary *Edict in Edicts) {
-           Eprocess(
-                     subdirB64(path,queryMatch,useB64uid,&isNewSubdir),
-                     [Edict[@"0020000D"][@"Value"] firstObject]
-                    );
-         }
+         NSString *queryFolder=nil;
+         if (mkMatchFolder) queryFolder=subdirB64(path,queryMatch,useB64uid,&isNewSubdir);
+         else queryFolder=path;
+         for (NSDictionary *Edict in Edicts) Eprocess(queryFolder,[Edict[@"0020000D"][@"Value"] firstObject]);
       }
 
        
