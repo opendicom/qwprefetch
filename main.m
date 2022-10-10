@@ -1,23 +1,27 @@
 // Created by jacquesfauquex@opendicom.com on 2022-10-03.
 // Copyright (c) 2022 opendicom.com. All rights reserved.
 
-// branch created to create new b64uid repository from dicomweb
+// branch dedicated to creation of b64uid repository from dicomweb
+//compulsory 0-5
+//optionals 6-8
 
 #import <Foundation/Foundation.h>
 #import "NSData+DICOMweb.h"
 
+enum {
+   command=0,
+   queryEndpoint,
+   retrieveEndpoint,
+   repositoryPath,
+   filter
+} argsEnum;
+
+BOOL useB64uid=false;
+NSString *Q=nil;
+NSString *R=nil;
 NSFileManager *fileManager=nil;
 BOOL isDir=false;
 BOOL isNewSubdir=false;
-
-//uint8 sopClength=0;
-//NSRange sopClengthRange;
-//uint8 sopIoffset=0;
-//uint8 sopIlength=0;
-//NSRange sopIlengthRange;
-//NSRange sopIrange;
-//NSRange sopIlastByteRange;
-//uint8 sopIlastByte;
 
 NSString *B64CHAR[]={
 @"-", @"0", @"1", @"2", @"3", @"4", @"5", @"6", @"7", @"8",
@@ -159,126 +163,130 @@ NSString *subdirB64(NSString *dir,NSString *uid, BOOL useB64uid, BOOL *isNewSubd
    return subdirB64;
 }
 
+void Eprocess(NSString *Epath, NSString* E)
+{
+   NSError *error=nil;
+   NSURL *qidoS=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies/%@/series?",R,E]];
+   if (!qidoS) return;
+   NSData *qidoSdata=[NSData dataWithContentsOfURL:qidoS options:NSDataReadingUncached error:&error];
+   if (!qidoSdata)
+   {
+       //NSURLConnection finished with error - code -1002
+       NSLog(@"%@", error.description);
+       exit(4);
+   }
+   if (!qidoSdata.length) return;//no instance found
+   NSArray *Sdicts = [NSJSONSerialization JSONObjectWithData:qidoSdata options:0 error:&error];
+   if (!Sdicts)
+   {
+       NSLog(@"%@\r\%@",error.description,[[NSString alloc]initWithData:qidoSdata encoding:NSUTF8StringEncoding] );
+       exit(4);
+   }
+   NSString *Eb64path=subdirB64(Epath,E,useB64uid,&isNewSubdir);
+
+
+#pragma mark loop S
+   for (NSDictionary *Sdict in Sdicts)
+   {
+      NSString *S=[Sdict[@"0020000E"][@"Value"] firstObject];
+      NSString *Sb64path=subdirB64(Eb64path,S,useB64uid,&isNewSubdir);
+      NSMutableSet *Is=nil;
+      //NSUInteger serverIcount=[[S[@"00201209)"][@"Value"] firstObject]unsignedIntegerValue];
+      if (!isNewSubdir)
+      {
+         Is=[NSMutableSet set];
+         
+         //check if the series dir already has contents
+         NSArray *contents=[fileManager contentsOfDirectoryAtPath:Sb64path error:nil];
+         for (NSString *name in contents)
+         {
+            if (![name hasPrefix:@"."]) [Is addObject:name];
+         }
+      }
+      
+      NSMutableDictionary *Iranges=[NSMutableDictionary dictionary];
+      NSData *data=[NSData syncRetrieveMultiDICMendpoint:R E:E S:S I:nil resultPointers:Iranges];
+      
+      for (NSString* I in Iranges)
+      {
+         NSString *Ib64;
+         if (useB64uid) Ib64=b64(I);
+         else Ib64=I;
+         if (Is && [Is containsObject:Ib64])
+         {
+            NSLog(@"already exists: %@/%@",Sb64path,Ib64);
+         }
+         else
+         {
+            NSData *Idata=[data subdataWithRange:[Iranges[I] rangeValue]];
+            [Idata writeToFile:[Sb64path stringByAppendingPathComponent:Ib64] atomically:NO];
+         }
+      }//I
+   }//Sdict
+}//Edict
+
 
 int main(int argc, const char * argv[])
 {
+    NSError *error=nil;
     fileManager=[NSFileManager defaultManager];
     @autoreleasepool {
-    NSError *jsonError=nil;
-    NSError *qidoError=nil;
     //http://unicode.org/reports/tr35/tr35-6.html#Date_Format_Patterns
     NSDateFormatter *DAFormatter = [[NSDateFormatter alloc] init];
     [DAFormatter setDateFormat:@"yyMMdd"];
-    //NSDateFormatter *DTFormatter = [[NSDateFormatter alloc] init];
-    //[DTFormatter setDateFormat:@"yyMMddhhmmss"];
 
 #pragma mark - args
      
-     NSMutableArray *args=[NSMutableArray arrayWithArray:[[NSProcessInfo processInfo] arguments]];
+     NSArray *args=[[NSProcessInfo processInfo] arguments];
      //NSLog(@"%@",[args description]);
-     //[0] command path
-     //[1] qido endpoint
-     //[2] wado endpoint
-     NSString *path=[args[3] stringByExpandingTildeInPath];
-     BOOL isDir=false;
+     Q=args[queryEndpoint];
+     R=args[retrieveEndpoint];
+
+     NSString *path=[args[repositoryPath] stringByExpandingTildeInPath];
      if (![fileManager fileExistsAtPath:path isDirectory:&isDir] || !isDir)
      {
          NSLog(@"bad path:%@",path);
          exit(1);
      }
-     //[4] useB64uid / uid
-     BOOL useB64uid=[args[4]isEqualToString:@"useB64uid"];
-     //[5] date DAa (or startdate if there is [5] end date DAz
-     NSString *Da=nil;
-     if (args.count==6) Da=args[5];
-     else Da=[DAFormatter stringFromDate:[NSDate date]];
-     NSArray *Ds=@[Da];
-
-     for (NSString *D in Ds)
+   
+     //filter is or E or D-D
+     if ([args[filter] containsString:@"-"])
      {
-         NSURL *qidoE=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies?StudyDate=20%@",args[1],D]];
-         if (!qidoE) return 3;
-         NSData *qidoEdata=[NSData dataWithContentsOfURL:qidoE options:NSDataReadingUncached error:&qidoError];
-         if (!qidoEdata)
-         {
-             //NSURLConnection finished with error - code -1002
-             NSLog(@"%@", qidoError.description);
-             return 3;
-         }
-         if (!qidoEdata.length) continue;//no instance found
-         NSArray *Edicts = [NSJSONSerialization JSONObjectWithData:qidoEdata options:0 error:&jsonError];
-         if (!Edicts)
-         {
-             NSLog(@"%@\r\%@",jsonError.description,[[NSString alloc]initWithData:qidoEdata encoding:NSUTF8StringEncoding] );
-             return 3;
-         }
-         NSString *Db64path=subdirB64(path,D,useB64uid,&isNewSubdir);
-
-        
-#pragma mark - loop E
-
-         for (NSDictionary *Edict in Edicts)
-         {
-            NSString *E=[Edict[@"0020000D"][@"Value"] firstObject];
-            NSURL *qidoS=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies/%@/series?",args[1],E]];
-            if (!qidoS) continue;
-            NSData *qidoSdata=[NSData dataWithContentsOfURL:qidoS options:NSDataReadingUncached error:&qidoError];
-            if (!qidoSdata)
+        //date filter
+        NSArray *fromto=[args[filter] componentsSeparatedByString:@"-"];
+        NSArray *Ds=nil;
+        if ([fromto[0] isEqualToString:fromto[1]]) Ds=@[fromto[0]];
+//TODO Ds range
+        for (NSString *D in Ds)
+        {
+            NSURL *qidoE=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies?StudyDate=20%@",args[queryEndpoint],D]];
+            if (!qidoE) return 3;
+            NSData *qidoEdata=[NSData dataWithContentsOfURL:qidoE options:NSDataReadingUncached error:&error];
+            if (!qidoEdata)
             {
                 //NSURLConnection finished with error - code -1002
-                NSLog(@"%@", qidoError.description);
-                return 4;
+                NSLog(@"%@", error.description);
+                return 3;
             }
-            if (!qidoSdata.length) continue;//no instance found
-            NSArray *Sdicts = [NSJSONSerialization JSONObjectWithData:qidoSdata options:0 error:&jsonError];
-            if (!Sdicts)
+            if (!qidoEdata.length) continue;//no instance found
+            NSArray *Edicts = [NSJSONSerialization JSONObjectWithData:qidoEdata options:0 error:&error];
+            if (!Edicts)
             {
-                NSLog(@"%@\r\%@",jsonError.description,[[NSString alloc]initWithData:qidoSdata encoding:NSUTF8StringEncoding] );
-                return 4;
+                NSLog(@"%@\r\%@",error.description,[[NSString alloc]initWithData:qidoEdata encoding:NSUTF8StringEncoding] );
+                return 3;
             }
-            NSString *Eb64path=subdirB64(Db64path,E,useB64uid,&isNewSubdir);
+            for (NSDictionary *Edict in Edicts) Eprocess(
+                                                         subdirB64(path,D,useB64uid,&isNewSubdir),
+                                                         [Edict[@"0020000D"][@"Value"] firstObject]
+                                                         );
+         }//Date
 
-
-#pragma mark loop S
-            for (NSDictionary *Sdict in Sdicts)
-            {
-               NSString *S=[Sdict[@"0020000E"][@"Value"] firstObject];
-               NSString *Sb64path=subdirB64(Eb64path,S,useB64uid,&isNewSubdir);
-               NSMutableSet *Is=nil;
-               //NSUInteger serverIcount=[[S[@"00201209)"][@"Value"] firstObject]unsignedIntegerValue];
-               if (!isNewSubdir)
-               {
-                  Is=[NSMutableSet set];
-                  
-                  //check if the series dir already has contents
-                  NSArray *contents=[fileManager contentsOfDirectoryAtPath:Sb64path error:nil];
-                  for (NSString *name in contents)
-                  {
-                     if (![name hasPrefix:@"."]) [Is addObject:name];
-                  }
-               }
-               
-               NSMutableDictionary *Iranges=[NSMutableDictionary dictionary];
-               NSData *data=[NSData syncRetrieveMultiDICMendpoint:args[2] E:E S:S I:nil resultPointers:Iranges];
-               
-               for (NSString* I in Iranges)
-               {
-                  NSString *Ib64;
-                  if (useB64uid) Ib64=b64(I);
-                  else Ib64=I;
-                  if (Is && [Is containsObject:Ib64])
-                  {
-                     NSLog(@"already exists: %@/%@",Sb64path,Ib64);
-                  }
-                  else
-                  {
-                     NSData *Idata=[data subdataWithRange:[Iranges[I] rangeValue]];
-                     [Idata writeToFile:[Sb64path stringByAppendingPathComponent:Ib64] atomically:NO];
-                  }
-               }//I
-            }//Sdict
-         }//Edict
-      }//Date
+     }
+     else
+     {
+        //EUID filter
+     }
+       
    }//autorelease pool
    return 0;
 }//main
