@@ -276,7 +276,11 @@ int main(int argc, const char * argv[])
         queryFilter=@"%@/studies?StudyDate=20%@";
         mkMatchFolder=true;
         NSArray *fromto=[args[filter] componentsSeparatedByString:@"-"];
-        if ([fromto[0] isEqualToString:fromto[1]]) queryMatches=@[[fromto[0]substringFromIndex:2]];//eliminates 20th century from reference
+        if ([fromto[0] isEqualToString:fromto[1]])
+        {
+            queryMatches=@[[fromto[0]substringFromIndex:2]];
+            //eliminates 20th century from reference
+        }
 //TODO Ds range
      }
      else //EUID filter
