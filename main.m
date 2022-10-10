@@ -2,8 +2,7 @@
 // Copyright (c) 2022 opendicom.com. All rights reserved.
 
 // branch dedicated to creation of b64uid repository from dicomweb
-//compulsory 0-5
-//optionals 6-8
+
 
 #import <Foundation/Foundation.h>
 #import "NSData+DICOMweb.h"
@@ -15,10 +14,11 @@ enum {
    repositoryPath,
    filter
 } argsEnum;
+//filer aaaammdd-aaaammdd | E
 
-const BOOL useB64uid=false;
+const BOOL useB64uid=true;
 
-NSString *ext=@"dcm";
+NSString *ext=@"";
 NSString *Q=nil;
 NSString *R=nil;
 NSFileManager *fileManager=nil;
@@ -121,7 +121,7 @@ NSString* b64(NSString* uidString){
     if (!uidString) return nil;
     NSUInteger length=uidString.length;
     if (length==0) return @"";
-    const char *array=[[uidString stringByAppendingString:@".."] cStringUsingEncoding:NSUTF8StringEncoding];
+    const char *array=[[uidString stringByAppendingString:@"..."] cStringUsingEncoding:NSUTF8StringEncoding];
     NSUInteger index=0;
     unsigned char u4a,u4b,u4c;
     NSMutableString *b64String=[NSMutableString stringWithCapacity:(length+1)/2];
@@ -212,21 +212,31 @@ void Eprocess(NSString *Epath, NSString* E)
       
       for (NSString* I in Iranges)
       {
-         NSString *Ib64;
-         if (useB64uid) Ib64=b64(I);
-         else Ib64=I;
-         if (Is && [Is containsObject:Ib64])
+//NSLog(@"%@",I);
+         if (Is && [Is containsObject:I])
          {
-            NSLog(@"already exists: %@/%@",Sb64path,Ib64);
+            NSLog(@"%@ already exists: %@",I,Sb64path);
          }
          else
          {
             NSData *Idata=[data subdataWithRange:[Iranges[I] rangeValue]];
-            [Idata writeToFile:
-             [
-              [Sb64path stringByAppendingPathComponent:Ib64]
-              stringByAppendingPathExtension:ext]
-              atomically:NO];
+            if (useB64uid)
+            {
+                NSLog(@"%@",I);
+                NSLog(@"%@",b64(I));
+                [Idata writeToFile:
+                 [
+                  [Sb64path stringByAppendingPathComponent:b64(I)]
+                  stringByAppendingPathExtension:ext]
+                  atomically:NO];
+            }
+            else
+                [Idata writeToFile:
+                 [
+                  [Sb64path stringByAppendingPathComponent:I]
+                  stringByAppendingPathExtension:ext
+                  ] atomically:NO
+                 ];
          }
       }//I
    }//Sdict
