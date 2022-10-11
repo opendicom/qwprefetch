@@ -250,7 +250,9 @@ int main(int argc, const char * argv[])
     @autoreleasepool {
     //http://unicode.org/reports/tr35/tr35-6.html#Date_Format_Patterns
     NSDateFormatter *DAFormatter = [[NSDateFormatter alloc] init];
-    [DAFormatter setDateFormat:@"yyMMdd"];
+    [DAFormatter setDateFormat:@"yyyyMMdd"];
+    NSDateFormatter *shortDAFormatter = [[NSDateFormatter alloc] init];
+    [shortDAFormatter setDateFormat:@"yyMMdd"];
 
 #pragma mark - args
      
@@ -278,8 +280,22 @@ int main(int argc, const char * argv[])
         NSArray *fromto=[args[filter] componentsSeparatedByString:@"-"];
         if ([fromto[0] isEqualToString:fromto[1]])
         {
-            queryMatches=@[[fromto[0]substringFromIndex:2]];
-            //eliminates 20th century from reference
+           //same start and end date
+           queryMatches=@[[fromto[0]substringFromIndex:2]];
+           //eliminates 20th century from reference
+        }
+        else
+        {
+           //range
+           NSMutableArray *dateList=[NSMutableArray array];
+           NSDate *curDate=[DAFormatter dateFromString:fromto[0]];
+           NSDate *endDate=[DAFormatter dateFromString:fromto[1]];
+           while ([curDate compare:endDate]!=NSOrderedDescending)
+           {
+              [dateList addObject:[shortDAFormatter stringFromDate:curDate]];
+              curDate=[curDate dateByAddingTimeInterval:24 * 3600];
+           }
+           queryMatches=[NSArray arrayWithArray:dateList];
         }
 //TODO Ds range
      }
