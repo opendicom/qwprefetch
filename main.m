@@ -168,6 +168,7 @@ NSString *subdirB64(NSString *dir,NSString *uid, BOOL useB64uid, BOOL *isNewSubd
 
 void Eprocess(NSString *Epath, NSString* E)
 {
+@autoreleasepool {
    NSError *error=nil;
    NSURL *qidoS=[NSURL URLWithString:[NSString stringWithFormat:@"%@/studies/%@/series?",R,E]];
    if (!qidoS) return;
@@ -240,7 +241,9 @@ void Eprocess(NSString *Epath, NSString* E)
          }
       }//I
    }//Sdict
-}//Edict
+}//E autorelease pool
+
+}//Eprocess
 
 
 int main(int argc, const char * argv[])
